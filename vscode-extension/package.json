@@ -1,0 +1,87 @@
+{
+  "name": "tracefind",
+  "displayName": "TraceFind - AI Context Navigator",
+  "description": "AI-powered context navigator for developers. Entity resolution, exact citations, and contradiction detection across code and docs.",
+  "version": "1.0.0",
+  "publisher": "tracefind-team",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Machine Learning",
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:tracefind.search",
+    "onCommand:tracefind.ask",
+    "onCommand:tracefind.index",
+    "onView:tracefindSidebar"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "tracefind.search",
+        "title": "TraceFind: Search Context",
+        "category": "TraceFind"
+      },
+      {
+        "command": "tracefind.ask",
+        "title": "TraceFind: Ask Question",
+        "category": "TraceFind"
+      },
+      {
+        "command": "tracefind.index",
+        "title": "TraceFind: Index Workspace",
+        "category": "TraceFind"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "tracefind-container",
+          "title": "TraceFind",
+          "icon": "$(search-fuzzy)"
+        }
+      ]
+    },
+    "views": {
+      "tracefind-container": [
+        {
+          "type": "webview",
+          "id": "tracefindSidebar",
+          "name": "TraceFind Navigator"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "TraceFind",
+      "properties": {
+        "tracefind.apiUrl": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "Base URL of the local TraceFind FastAPI backend."
+        },
+        "tracefind.defaultTopK": {
+          "type": "number",
+          "default": 5,
+          "description": "Default number of context results to retrieve."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "axios": "^1.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.4.5"
+  }
+}

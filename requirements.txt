@@ -1,0 +1,30 @@
+# TraceFind - Python Dependencies
+# Core Vector DB & Embeddings
+chromadb>=0.4.24
+sentence-transformers>=2.7.0
+
+# Tree-sitter Code Parsing (Pre-compiled cross-platform grammars)
+tree-sitter==0.21.3
+tree_sitter_languages>=1.10.2
+
+# LLM & Orchestration
+langchain>=0.1.20
+ollama>=0.2.1
+
+# Backend & Web Framework
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.1
+pydantic>=2.7.1
+python-multipart>=0.0.9
+
+# Document Parsing & OCR
+pypdf>=4.2.0
+unstructured>=0.14.0
+pytesseract>=0.3.10
+Pillow>=10.3.0
+
+# Search & Math Utilities
+rank-bm25>=0.2.2
+numpy>=1.26.4
+tqdm>=4.66.4
+requests>=2.32.3
