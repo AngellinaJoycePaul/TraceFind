@@ -133,10 +133,13 @@ class TraceFindHybridSearch:
             return []
 
         scores = self.bm25.get_scores(tokens)
+        if len(scores) == 0:
+            return []
+
         top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
 
         results = []
-        max_score = max(scores) if len(scores) > 0 and max(scores) > 0 else 1.0
+        max_score = max(scores) if max(scores) > 0 else 1.0
 
         for rank, idx in enumerate(top_indices):
             raw_score = float(scores[idx])
@@ -215,8 +218,10 @@ class TraceFindHybridSearch:
                 pairs = [[query, f"{c.get('name', '')}\n{c.get('content', '')}"] for c in candidate_list]
                 ce_scores = self.reranker.predict(pairs)
                 for item, score in zip(candidate_list, ce_scores):
-                    # Sigmoid transform for cross-encoder logits if needed
-                    prob = 1.0 / (1.0 + math.exp(-float(score))) if isinstance(score, (float, int)) else float(score)
+                    # Always apply sigmoid so both logits and probabilities
+                    # are mapped to a monotonic (0, 1) range.
+                    raw = float(score)
+                    prob = 1.0 / (1.0 + math.exp(-raw))
                     item["rerank_score"] = round(prob, 4)
                     item["score"] = item["rerank_score"]
 
@@ -236,12 +241,21 @@ class TraceFindHybridSearch:
 
     @staticmethod
     def _sort_by_rrf(candidates: List[Dict[str, Any]]):
-        """Sorts candidates by normalized RRF score with keyword bonuses."""
-        max_rrf = max(c["rrf_score"] for c in candidates) if candidates else 1.0
+        """Sorts candidates by RRF score with a bonus for multi-source matches.
+
+        Keeps raw RRF magnitudes intact so a strong single-source hit isn't
+        artificially equalized with a weak multi-source hit.
+        """
+        if not candidates:
+            return
+
         for c in candidates:
             # Bonus if matched by both vector AND keyword
             bonus = 1.2 if len(c.get("sources", [])) > 1 else 1.0
-            normalized = (c["rrf_score"] / max_rrf) * bonus
-            c["score"] = round(min(1.0, normalized), 4)
+            c["score"] = round(c["rrf_score"] * bonus, 6)
 
+        # Normalize for display only, AFTER sorting
         candidates.sort(key=lambda x: x["score"], reverse=True)
+        max_score = candidates[0]["score"] or 1.0
+        for c in candidates:
+            c["display_score"] = round(c["score"] / max_score, 4)

@@ -205,31 +205,54 @@ class TraceFindSynthesizer:
         """
         contradictions: List[Dict[str, Any]] = []
 
-        # 1. Parse explicit contradictions detected in LLM text output
-        if "contradiction" in llm_output.lower() or "discrepancy" in llm_output.lower() or "conflict" in llm_output.lower():
-            # Look for lines indicating contradiction
-            lines = llm_output.splitlines()
-            capture = False
-            buf = []
-            for line in lines:
-                if "contradiction" in line.lower() or "discrepanc" in line.lower():
-                    capture = True
-                if capture and line.strip():
-                    buf.append(line.strip())
-                elif capture and not line.strip() and len(buf) > 3:
-                    break
+        # 1. Parse explicit contradictions detected in LLM text output.
+        #    Only fire when the LLM actually asserts a contradiction AND
+        #    cites at least two concrete [file:line] sources. This prevents
+        #    false positives when the LLM says "no contradictions found".
+        lower_output = llm_output.lower()
 
-            if buf:
-                desc = " ".join(buf[:4])
-                # Find referenced sources
-                sources = re.findall(r"\[([A-Za-z0-9_\-\.\/]+:\d+(?:-\d+)?)\]", desc)
-                src_a = sources[0] if len(sources) > 0 else "Documentation"
-                src_b = sources[1] if len(sources) > 1 else "Implementation"
+        negation_pattern = re.compile(
+            r"\b(no|not|without|absence of|none|zero|does not|do not|did not|"
+            r"cannot|could not|unable to)\b[\s\w]{0,30}"
+            r"\b(contradiction|discrepanc|conflict|mismatch)",
+            re.IGNORECASE,
+        )
+        has_negation = bool(negation_pattern.search(lower_output))
+
+        positive_signal = any(
+            keyword in lower_output
+            for keyword in ["contradiction", "discrepancy", "conflict", "mismatch"]
+        )
+
+        if positive_signal and not has_negation:
+            # Find all [file:line] or [file:start-end] citations in the output
+            all_citations = re.findall(
+                r"\[([A-Za-z0-9_\-\.\/]+\.\w+):(\d+)(?:-(\d+))?\]",
+                llm_output,
+            )
+
+            # Only report a contradiction if at least 2 distinct sources are cited
+            distinct_sources = list({c[0] for c in all_citations})
+
+            if len(distinct_sources) >= 2:
+                # Extract the section around the contradiction keywords
+                lines = llm_output.splitlines()
+                capture = False
+                buf = []
+                for line in lines:
+                    if re.search(r"(contradiction|discrepanc|conflict|mismatch)", line, re.IGNORECASE):
+                        capture = True
+                    if capture and line.strip():
+                        buf.append(line.strip())
+                    elif capture and not line.strip() and len(buf) > 5:
+                        break
+
+                desc = " ".join(buf[:6]) if buf else "Contradiction detected across multiple sources."
 
                 contradictions.append({
                     "type": "semantic_mismatch",
-                    "source_a": src_a,
-                    "source_b": src_b,
+                    "source_a": distinct_sources[0],
+                    "source_b": distinct_sources[1],
                     "description": desc,
                     "confidence": 0.88,
                 })
