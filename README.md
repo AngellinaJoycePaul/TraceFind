@@ -220,6 +220,5 @@ Second-year IT student, building local AI tools for developers.
 
 - GitHub: [@AngellinaJoycePaul](https://github.com/AngellinaJoycePaul)
 - Blog: [dev.to/angellinajoycepaul](https://dev.to/angellinajoycepaul)
-- LinkedIn: [linkedin.com/in/angellinajoycepaul](https://www.linkedin.com/in/angellinajoycepaul)
-
+- LinkedIn: [linkedin.com/in/angellina-joyce-paul-917b24380](https://www.linkedin.com/in/angellina-joyce-paul-917b24380)
 If you find a contradiction in your own codebase with TraceFind, I'd love to hear about it.
